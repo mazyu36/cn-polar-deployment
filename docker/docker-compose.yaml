@@ -13,6 +13,7 @@ services:
       - BPL_JVM_THREAD_COUNT=50
       - BPL_DEBUG_ENBALED=true
       - BPL_DEBUG_PORT=8001
+      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
       - SPRING_DATASOURCE_URL=jdbc:postgresql://polar-postgres:5432/polardb_catalog
       - SPRING_PROFILES_ACTIVE=testdata
   order-service:
@@ -31,6 +32,7 @@ services:
       - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
       - SPRING_R2DBC_URL=r2dbc:postgresql://polar-postgres:5432/polardb_order
       - SPRING_FLYWAY_URL=jdbc:postgresql://polar-postgres:5432/polardb_order
+      - SPRING_RABBITMQ_HOST=polar-rabbitmq
   edge-service:
     depends_on:
       - polar-redis
@@ -52,6 +54,20 @@ services:
     container_name: "config-service"
     ports:
       - 8888:8888
+  dispatcher-service:
+    depends_on:
+      - polar-rabbitmq
+    image: "dispatcher-service"
+    container_name: dispatcher-service
+    ports:
+      - 9003:9003
+      - 8003:8003
+    environment:
+      # Buildpacks environment variable to enable debug through a socket on port 8002
+      - BPL_DEBUG_ENABLED=true
+      - BPL_DEBUG_PORT=8003
+      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
+      - SPRING_RABBITMQ_HOST=polar-rabbitmq
   polar-postgres:
     image: "postgres:14.4"
     container_name: "polar-postgres"
@@ -67,6 +83,14 @@ services:
     container_name: "polar-redis"
     ports:
       - 6379:6379
+  polar-rabbitmq:
+    image: rabbitmq:3.10-management
+    container_name: polar-rabbitmq
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
 networks:
   default:
     name: catalog-network
