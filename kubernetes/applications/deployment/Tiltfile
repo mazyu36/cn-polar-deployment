@@ -1,5 +1,7 @@
 include('../../../../cn-config-service/Tiltfile')
 include('../../../../cn-order-service/Tiltfile')
 include('../../../../cn-catalog-service/Tiltfile')
+include('../../../../cn-edge-service/Tiltfile')
+
 
 update_settings(max_parallel_updates=1)
